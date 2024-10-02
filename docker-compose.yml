@@ -1,0 +1,60 @@
+version: '3.8'
+services:
+  app:
+    image: php:8.2-fpm
+    container_name: app
+    working_dir: /var/www
+    volumes:
+      - ./src:/var/www
+    networks:
+      - app-network
+    depends_on:
+      - db
+
+  webserver:
+    image: nginx:alpine
+    container_name: webserver
+    working_dir: /var/www
+    volumes:
+      - ./src:/var/www
+      - ./docker/nginx/conf.d:/etc/nginx/conf.d
+    ports:
+      - "8080:80"
+    networks:
+      - app-network
+    depends_on:
+      - app
+
+  db:
+    image: mysql:8.0
+    container_name: db
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: laravel
+      MYSQL_USER: laravel
+      MYSQL_PASSWORD: secret
+    volumes:
+      - dbdata:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    networks:
+      - app-network
+
+  composer:
+    image: composer:latest
+    container_name: composer
+    working_dir: /var/www
+    volumes:
+      - ./src:/var/www
+    networks:
+      - app-network
+    depends_on:
+      - app
+
+volumes:
+  dbdata:
+    driver: local
+
+networks:
+  app-network:
+    driver: bridge
